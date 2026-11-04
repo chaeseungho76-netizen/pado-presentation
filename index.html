@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pavilion</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+    } }
+  </script>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <header id="hero">
+    <h1 id="title"></h1>
+    <p id="subtitle"></p>
+    <p id="refs" class="refs"></p>
+    <p id="author" class="author"></p>
+    <span class="hint">스크롤 ↓</span>
+  </header>
+  <main id="scenes"></main>
+  <nav id="dots"></nav>
+  <script type="module" src="main.js"></script>
+</body>
+</html>
