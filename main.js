@@ -409,7 +409,7 @@ const observer = new IntersectionObserver(entries => {
     e.target.classList.toggle("on", e.isIntersecting);
     if (!e.isIntersecting) continue;
     const s = content.scenes.find(x => x.id === e.target.dataset.id);
-    if (s) setTarget(s.camera, s.inside || null);
+    if (s && !exploring) setTarget(s.camera, s.inside || null);
     dots.querySelectorAll("a").forEach(a => a.classList.toggle("on", a.hash === "#" + s.id));
   }
 }, { rootMargin: "-45% 0px -45% 0px" });   // 장면이 화면 가운데 띠를 지나면 켜짐 (긴 장면도)
@@ -425,19 +425,41 @@ addEventListener("resize", resize);
 resize();
 
 const clock = new THREE.Clock();
+// ---------- 둘러보기: 스크롤 장면을 멈추고 마우스로 자유롭게 ----------
+let exploring = false;
+const exploreBtn = document.getElementById("explore");
+exploreBtn?.addEventListener("click", () => {
+  exploring = !exploring;
+  document.body.classList.toggle("exploring", exploring);
+  exploreBtn.textContent = exploring ? "발표로 돌아가기" : "둘러보기";
+  Object.assign(controls, exploring
+    ? { enableZoom: true, enablePan: true, minDistance: 1, maxDistance: Math.max(seaR, 8) * 6, maxPolarAngle: Math.PI / 2 - 0.03 }
+    : { enableZoom: false, enablePan: true, minDistance: 0, maxDistance: Infinity, maxPolarAngle: Math.PI });
+  if (exploring) {
+    pivot.rotation.y = 0;                            // 돌던 모형을 멈추고 똑바로
+    controls.target.copy(outsideLook);
+  } else {
+    setTarget(current, inside);                      // 보던 장면으로 돌아감
+  }
+});
+
 renderer.setAnimationLoop(() => {
   const t = clock.getElapsedTime();
   animateSea(t, seaR);
   clouds.rotation.y = t * 0.004;                     // 구름은 아주 천천히 흘러감
   // 안에 들어가 있을 때는 모형을 멈추고(회전 · 떠오름 없이) 천천히 걸어 들어간다
-  const k = inside ? 0 : 1;
+  const k = inside || exploring ? 0 : 1;
   pivot.position.y = k * seaR * (0.002 + Math.sin(t * 0.8) * 0.001);   // 모형 크기에 비례해 살짝 떠오름
-  if (!inside) pivot.rotation.y += 0.0008;
-  else pivot.rotation.y += (0 - pivot.rotation.y) * 0.05;
-  camera.position.lerp(target, inside ? 0.03 : 0.04);
-  const fov = inside?.fov ?? 40;                     // 안에서는 화각을 넓혀 지붕 아래가 더 많이 보이게
+  if (exploring) {
+    // 둘러보기: 카메라는 마우스가 정하고, 화각만 보통으로
+  } else {
+    if (!inside) pivot.rotation.y += 0.0008;
+    else pivot.rotation.y += (0 - pivot.rotation.y) * 0.05;
+    camera.position.lerp(target, inside ? 0.03 : 0.04);
+    controls.target.lerp(lookTarget, 0.05);
+  }
+  const fov = exploring ? 50 : inside?.fov ?? 40;    // 안에서는 화각을 넓혀 지붕 아래가 더 많이 보이게
   if (Math.abs(camera.fov - fov) > 0.05) { camera.fov += (fov - camera.fov) * 0.05; camera.updateProjectionMatrix(); }
-  controls.target.lerp(lookTarget, 0.05);
   controls.update();
   renderer.render(scene, camera);
 });
